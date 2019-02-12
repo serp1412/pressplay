@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 
 require 'pressplay'
-puts PressPlay.hi
+puts PressPlay::Runner.run
