@@ -26,3 +26,9 @@ module PressPlay
     end
   end
 end
+
+class Xcodeproj::Project::Object::AbstractTarget
+  def sources_phase
+    self.build_phases.find { |bp| bp.display_name && bp.display_name == 'Sources' }
+  end
+end
