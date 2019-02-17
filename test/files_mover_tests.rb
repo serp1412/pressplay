@@ -5,7 +5,7 @@ require_relative '../lib/pressplay/files_mover.rb'
 
 class FilesMoverTest < Minitest::Test
 
-		def setup
+	def setup
     	@project = Xcodeproj::Project.new(Dir.getwd)
     	@app_target = @project.new_target(:application, "TestApp", :ios, "1.2", nil, :swift)
     	@framework_target = @project.new_target(:framework, "TestAppFramework", :ios, "1.2", nil, :swift)
