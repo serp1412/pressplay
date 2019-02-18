@@ -43,6 +43,48 @@ module PressPlay
 			end
 
 			def edit_app_delegate
+
+				app_delegate_funcs = @app_delegate_structure['key.substructure']&.select { |ss| 
+					ss['key.kind'].is_func? && (ss['key.name'].include? "application")
+				}
+
+				app_delegate_funcs&.reverse&.each do |sub_struct|
+
+					beginning_of_body = sub_struct['key.bodyoffset']
+					body_length = sub_struct['key.bodylength']
+					@app_delegate_raw_string[beginning_of_body..(beginning_of_body + body_length - 2)] = ""
+
+					func = ""
+					func << "return " unless sub_struct['key.typename'].nil?
+					func << "frameworkDelegate."
+					func_name = sub_struct['key.name']
+					arg_sub_structs = sub_struct['key.substructure']&.select { |ss| ss['key.kind'].is_param? }
+
+					unless arg_sub_structs.nil? 
+						arg_indices = sub_struct['key.name'].all_indices_of(":").reverse
+						first_pass = true
+						arg_struct = arg_sub_structs.reverse
+						arg_struct.each_index do |index|
+							ss = arg_struct[index]
+							name = ss['key.name']
+							colon_index = arg_indices[index]
+							need_to_replace = func_name.is_previous_character?("_", colon_index)
+							name_to_insert = first_pass ? name : name + ", "
+							if need_to_replace
+								func_name[colon_index - 1..colon_index] = name_to_insert
+							else
+								func_name.insert(colon_index + 1, name_to_insert)
+							end
+
+							first_pass = false
+						end
+					end
+
+					func << func_name
+
+					@app_delegate_raw_string.insert(sub_struct['key.bodyoffset'], "\n" + func + "\n")
+				end
+
 				framework_delegate_var = ""
 
 				if @framework_delegate_raw.include? "var window: UIWindow?"
@@ -57,7 +99,7 @@ module PressPlay
   				framework_delegate_var = "private let frameworkDelegate = FrameworkDelegate()"
 				end
 
-				beginning_of_body = @app_delegate_structure['key.bodyoffset'] - 1
+				beginning_of_body = @app_delegate_structure['key.bodyoffset']
 				@app_delegate_raw_string.insert(beginning_of_body, "\n" + framework_delegate_var)
 
 				insertion_point = @import_lines.last.length + @app_delegate_raw_string.index(@import_lines.last)
@@ -105,5 +147,24 @@ class String
 
 	def is_var?
 		self == 'source.lang.swift.decl.var.instance' || self == 'source.lang.swift.decl.let.instance'
+	end
+
+	def is_func?
+		!is_var?
+	end
+
+	def is_param?
+		self == "source.lang.swift.decl.var.parameter"
+	end
+
+	def all_indices_of(char)
+		return (0 ... length).find_all { |i| self[i,1] == char }
+	end
+
+	def is_previous_character?(char, at_index)
+		return false if self.empty?
+		return false if at_index == 0
+
+		self[at_index - 1] == char
 	end
 end
