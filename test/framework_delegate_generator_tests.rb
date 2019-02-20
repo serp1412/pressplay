@@ -19,6 +19,7 @@ import UIKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+
 }
 "
 
@@ -40,6 +41,7 @@ import TestAppFramework
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+
 private let frameworkDelegate = FrameworkDelegate()
 }
 "
@@ -64,6 +66,7 @@ import UIKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+
 	var window: UIWindow?
 }"
 
@@ -80,6 +83,7 @@ import TestAppFramework
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+
 private lazy var frameworkDelegate: FrameworkDelegate = {
         let delegate = FrameworkDelegate()
         delegate.window = self.window
@@ -98,6 +102,9 @@ public var window: UIWindow?
 
 		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
 
+		puts data.app_delegate_raw
+		puts app_delegate_result
+
 		assert_equal app_delegate_result, data.app_delegate_raw
 		assert_equal result, data.framework_delegate_raw
 	end
@@ -115,8 +122,11 @@ import UIKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+
 	var window: UIWindow?
-	func applicationWillResignActive(_ application: UIApplication) {}
+	func applicationWillResignActive(_ application: UIApplication) {
+
+}
 }"
 
 		app_delegate_result = "//
@@ -132,6 +142,7 @@ import TestAppFramework
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+
 private lazy var frameworkDelegate: FrameworkDelegate = {
         let delegate = FrameworkDelegate()
         delegate.window = self.window
@@ -140,6 +151,7 @@ private lazy var frameworkDelegate: FrameworkDelegate = {
     }()
 	var window: UIWindow?
 	func applicationWillResignActive(_ application: UIApplication) {
+
 frameworkDelegate.applicationWillResignActive(application)
 }
 }"
@@ -148,11 +160,16 @@ frameworkDelegate.applicationWillResignActive(application)
 
 public class FrameworkDelegate: UIResponder, UIApplicationDelegate {
 public var window: UIWindow?
-public func applicationWillResignActive(_ application: UIApplication) {}
+public func applicationWillResignActive(_ application: UIApplication) {
+
+}
 }"
 		ast = `sourcekitten structure --text '#{app_delegate}'`
 
 		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
+
+		puts data.framework_delegate_raw
+		puts result
 
 		assert_equal app_delegate_result, data.app_delegate_raw
 		assert_equal result, data.framework_delegate_raw
@@ -171,6 +188,7 @@ import UIKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+
 var window: UIWindow?
 func applicationWillResignActive(_ application: UIApplication) {
 // Some comments
@@ -191,14 +209,16 @@ import TestAppFramework
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+
 private lazy var frameworkDelegate: FrameworkDelegate = {
         let delegate = FrameworkDelegate()
         delegate.window = self.window
 
         return delegate
     }()
-	var window: UIWindow?
-	func applicationWillResignActive(_ application: UIApplication) {
+var window: UIWindow?
+func applicationWillResignActive(_ application: UIApplication) {
+
 frameworkDelegate.applicationWillResignActive(application)
 }
 }"
@@ -223,7 +243,91 @@ let a = "1"
 		assert_equal result, data.framework_delegate_raw
 	end
 
-	def test_app_delegate_with_window_var_and_a_func
+	def test_app_delegate_with_extra_funcs
+		app_delegate = '//
+//  AppDelegate.swift
+//  BasicApp
+//
+//  Created by Serghei Catraniuc on 2/10/19.
+//  Copyright © 2019 TestCompany. All rights reserved.
+//
+
+import UIKit
+
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+var window: UIWindow?
+func applicationWillResignActive(_ application: UIApplication) {
+// Some comments
+let a = "1"
+}
+
+@objc private func someRandomFunc() {
+
+}
+
+fileprivate func anotherFunc(_ string: String, value: Int) -> Bool {
+return true
+}
+}'
+
+app_delegate_result = "//
+//  AppDelegate.swift
+//  BasicApp
+//
+//  Created by Serghei Catraniuc on 2/10/19.
+//  Copyright © 2019 TestCompany. All rights reserved.
+//
+
+import UIKit
+import TestAppFramework
+
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+private lazy var frameworkDelegate: FrameworkDelegate = {
+        let delegate = FrameworkDelegate()
+        delegate.window = self.window
+
+        return delegate
+    }()
+var window: UIWindow?
+func applicationWillResignActive(_ application: UIApplication) {
+
+frameworkDelegate.applicationWillResignActive(application)
+}
+
+
+}"
+
+		result = 'import UIKit
+
+public class FrameworkDelegate: UIResponder, UIApplicationDelegate {
+public var window: UIWindow?
+public func applicationWillResignActive(_ application: UIApplication) {
+// Some comments
+let a = "1"
+}
+@objc private func someRandomFunc() {
+
+}
+fileprivate func anotherFunc(_ string: String, value: Int) -> Bool {
+return true
+}
+}'
+		ast = `sourcekitten structure --text '#{app_delegate}'`
+
+		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
+
+		puts data.framework_delegate_raw
+		puts result
+
+		assert_equal app_delegate_result, data.app_delegate_raw
+		assert_equal result, data.framework_delegate_raw
+	end
+
+	def test_default_app_delegate
 		app_delegate = '//
 //  AppDelegate.swift
 //  BasicApp

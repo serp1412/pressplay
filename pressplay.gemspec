@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.description = "Add playground support to your swift app"
   s.authors     = ["Serghei Catraniuc"]
   s.email       = 'catraniuc.serghei@gmail.com'
-  s.files       = ["lib/pressplay.rb", "lib/pressplay/helpers.rb", "lib/pressplay/framework_generator.rb", "lib/pressplay/info_plist_generator.rb", "lib/pressplay/files_mover.rb"]
+  s.files       =  Dir.glob("{bin,lib}/**/*") #["lib/pressplay.rb", "lib/pressplay/helpers.rb", "lib/pressplay/framework_generator.rb", "lib/pressplay/info_plist_generator.rb", "lib/pressplay/files_mover.rb", "lib/pressplay/framework_delegate_generator.rb"]
   s.homepage    =
     'https://github.com/serp1412/pressplay'
   s.license       = 'BSD-2-Clause'

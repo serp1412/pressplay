@@ -7,7 +7,8 @@ module PressPlay
 			def self.generate_for(project, dir = Dir.getwd)
 				# TODO: bad assumption that first target is the main one. Probably need to ask user
 				app_target = project.targets.first
-				version = app_target.build_configurations.first.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] ||= 12.0
+				app_build_settings = app_target.build_configurations.first.build_settings
+				version = app_build_settings['IPHONEOS_DEPLOYMENT_TARGET'] ||= 12.0
 				framework_name = "#{app_target.name}Framework"
 				framework_target = project.new_target(:framework, framework_name, :ios, "#{version}", nil, :swift)
 				framework_group = project.new_group(framework_name)
@@ -18,9 +19,12 @@ module PressPlay
 				update_changed_file(info_plist, Pathname.new(relative_path_string))
 				framework_target.build_configurations.each do |c|
           c.build_settings['INFOPLIST_FILE'] = relative_path_string
+          c.build_settings['SWIFT_VERSION'] = app_build_settings['SWIFT_VERSION'] ||= '4.0'
         end
 
         framework_group.new_file(relative_path_string)
+        app_target.add_dependency(framework_target)
+
 				framework_target
 			end
 

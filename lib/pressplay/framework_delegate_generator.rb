@@ -30,7 +30,7 @@ module PressPlay
 				@framework_delegate_raw << "\n"
 
 				@app_delegate_structure['key.substructure']&.each do |sub_struct|
-					@framework_delegate_raw << (sub_struct['key.accessibility'] == 'source.lang.swift.accessibility.internal' ? 'public' : 'private')
+					@framework_delegate_raw << prefix_attributes_for(sub_struct) #(sub_struct['key.accessibility'] == 'source.lang.swift.accessibility.internal' ? 'public' : 'private')
 					@framework_delegate_raw << ' '
 					
 					@framework_delegate_raw << (sub_struct['key.kind'].is_var? ? 
@@ -42,49 +42,52 @@ module PressPlay
 				@framework_delegate_raw << '}'
 			end
 
+			def prefix_attributes_for(sub_struct)
+				return sub_struct['key.accessibility'].to_access_level if sub_struct['key.attributes'].nil?
+				beginning_of_func = beginning_of_func(sub_struct)
+				beginning_of_func_name = sub_struct['key.offset'] - 3
+				@app_delegate_raw_string[beginning_of_func..beginning_of_func_name]
+			end
+
 			def edit_app_delegate
 
-				app_delegate_funcs = @app_delegate_structure['key.substructure']&.select { |ss| 
-					ss['key.kind'].is_func? && (ss['key.name'].include? "application")
-				}
+				all_funcs = @app_delegate_structure['key.substructure']&.select { |ss| ss['key.kind'].is_func? }
 
-				app_delegate_funcs&.reverse&.each do |sub_struct|
-
-					beginning_of_body = sub_struct['key.bodyoffset']
-					body_length = sub_struct['key.bodylength']
-					@app_delegate_raw_string[beginning_of_body..(beginning_of_body + body_length - 2)] = ""
-
-					func = ""
-					func << "return " unless sub_struct['key.typename'].nil?
-					func << "frameworkDelegate."
-					func_name = sub_struct['key.name']
-					arg_sub_structs = sub_struct['key.substructure']&.select { |ss| ss['key.kind'].is_param? }
-
-					unless arg_sub_structs.nil? 
-						arg_indices = sub_struct['key.name'].all_indices_of(":").reverse
-						first_pass = true
-						arg_struct = arg_sub_structs.reverse
-						arg_struct.each_index do |index|
-							ss = arg_struct[index]
-							name = ss['key.name']
-							colon_index = arg_indices[index]
-							need_to_replace = func_name.is_previous_character?("_", colon_index)
-							name_to_insert = first_pass ? name : name + ", "
-							if need_to_replace
-								func_name[colon_index - 1..colon_index] = name_to_insert
-							else
-								func_name.insert(colon_index + 1, name_to_insert)
-							end
-
-							first_pass = false
-						end
+				all_funcs&.reverse&.each do |sub_struct|
+					if sub_struct['key.name'].include? "application"
+						adjust_app_delegate_func(sub_struct)
+					else
+						remove_additional_func(sub_struct)
 					end
-
-					func << func_name
-
-					@app_delegate_raw_string.insert(sub_struct['key.bodyoffset'], "\n" + func + "\n")
 				end
 
+				add_framework_delegate_property
+				add_import_framework_line
+			end
+
+			def remove_additional_func(sub_struct)
+				beginning_of_func = beginning_of_func(sub_struct)
+				length_of_func = length_of_func(sub_struct, beginning_of_func)
+				@app_delegate_raw_string[beginning_of_func..beginning_of_func+length_of_func] = ""
+			end
+
+			def beginning_of_func(sub_struct)
+				return sub_struct['key.offset'] - 1 if sub_struct['key.attributes'].nil?
+				sorted = sub_struct['key.attributes'].sort_by { |a| a['key.offset'] }
+				sorted.first['key.offset'] - 1
+			end
+
+			def length_of_func(sub_struct, beginning_of_func)
+				adjustment_for_attributes = (sub_struct['key.offset'] - 1) - beginning_of_func
+				sub_struct['key.length'] + adjustment_for_attributes
+			end
+
+			def add_import_framework_line
+				insertion_point = @import_lines.last.length + @app_delegate_raw_string.index(@import_lines.last)
+				@app_delegate_raw_string.insert(insertion_point, "import #{@framework_name}\n")
+			end
+
+			def add_framework_delegate_property
 				framework_delegate_var = ""
 
 				if @framework_delegate_raw.include? "var window: UIWindow?"
@@ -101,9 +104,44 @@ module PressPlay
 
 				beginning_of_body = @app_delegate_structure['key.bodyoffset']
 				@app_delegate_raw_string.insert(beginning_of_body, "\n" + framework_delegate_var)
+			end
 
-				insertion_point = @import_lines.last.length + @app_delegate_raw_string.index(@import_lines.last)
-				@app_delegate_raw_string.insert(insertion_point, "import #{@framework_name}\n")
+			def adjust_app_delegate_func(sub_struct)
+				beginning_of_body = sub_struct['key.bodyoffset']
+				body_length = sub_struct['key.bodylength']
+				@app_delegate_raw_string[beginning_of_body..(beginning_of_body + body_length - 2)] = ""
+
+				func = ""
+				func << "return " unless sub_struct['key.typename'].nil?
+				func << "frameworkDelegate."
+				func_name = sub_struct['key.name']
+				arg_sub_structs = sub_struct['key.substructure']&.select { |ss| ss['key.kind'].is_param? }
+
+				add_args_to_func(func_name, arg_sub_structs) unless arg_sub_structs.nil?
+
+				func << func_name
+
+				@app_delegate_raw_string.insert(sub_struct['key.bodyoffset'], "\n" + func + "\n")
+			end
+
+			def add_args_to_func(func_name, arg_sub_structs)
+				arg_indices = func_name.all_indices_of(":").reverse
+				first_pass = true
+				arg_struct = arg_sub_structs.reverse
+				arg_struct.each_index do |index|
+					ss = arg_struct[index]
+					name = ss['key.name']
+					colon_index = arg_indices[index]
+					need_to_replace = func_name.is_previous_character?("_", colon_index)
+					name_to_insert = first_pass ? name : name + ", "
+					if need_to_replace
+						func_name[colon_index - 1..colon_index] = name_to_insert
+					else
+						func_name.insert(colon_index + 1, name_to_insert)
+					end
+
+					first_pass = false
+				end
 			end
 
 			# TODO: verify if I can use the string_from_func instead of this for vars and lets
@@ -143,6 +181,12 @@ class String
 			return 'let' if self == 'source.lang.swift.decl.let.instance'
 			return 'func' if self == 'source.lang.swift.decl.function.method.instance'
 			# TODO: add parsing for static kinds
+	end
+
+	def to_access_level
+		return 'public' if self == 'source.lang.swift.accessibility.internal'
+		return 'private' if self == 'source.lang.swift.accessibility.private'
+		return 'fileprivate' if self == 'source.lang.swift.accessibility.fileprivate'
 	end
 
 	def is_var?

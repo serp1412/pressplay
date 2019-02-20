@@ -1,7 +1,8 @@
 module PressPlay
   class Helpers
+    require 'xcodeproj'
+    
     def self.project
-      require 'xcodeproj'
       workspace_path = Dir["*.xcworkspace"].first
       return if project_path(workspace_path).nil?
       project_path = Pathname.new(project_path(workspace_path)).relative_path_from(Pathname.new(Dir.getwd)).to_s
