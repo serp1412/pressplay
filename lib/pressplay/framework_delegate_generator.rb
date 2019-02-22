@@ -50,19 +50,29 @@ module PressPlay
 			end
 
 			def edit_app_delegate
-
-				all_funcs = @app_delegate_structure['key.substructure']&.select { |ss| ss['key.kind'].is_func? }
-
-				all_funcs&.reverse&.each do |sub_struct|
-					if sub_struct['key.name'].include? "application"
-						adjust_app_delegate_func(sub_struct)
+				@app_delegate_structure['key.substructure']&.reverse&.each do |sub_struct|
+					if sub_struct['key.kind'].is_func?
+						process_app_delegate_func(sub_struct)
 					else
-						remove_additional_func(sub_struct)
+						process_app_delegate_var(sub_struct)
 					end
 				end
 
 				add_framework_delegate_property
 				add_import_framework_line
+			end
+
+			def process_app_delegate_var(sub_struct)
+				return if sub_struct['key.name'] == 'window'
+				remove_additional_func(sub_struct)
+			end
+
+			def process_app_delegate_func(sub_struct)
+				if sub_struct['key.name'].include? "application"
+					adjust_app_delegate_func(sub_struct)
+				else
+					remove_additional_func(sub_struct)
+				end
 			end
 
 			def remove_additional_func(sub_struct)
