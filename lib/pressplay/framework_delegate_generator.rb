@@ -43,6 +43,7 @@ module PressPlay
 			end
 
 			def prefix_attributes_for(sub_struct)
+				return "" if sub_struct['key.attributes'].nil? && sub_struct['key.accessibility'].nil?
 				return sub_struct['key.accessibility'].to_access_level if sub_struct['key.attributes'].nil?
 				beginning_of_func = beginning_of_func(sub_struct)
 				beginning_of_func_name = sub_struct['key.offset'] - 3

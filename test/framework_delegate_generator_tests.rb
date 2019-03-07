@@ -4,7 +4,7 @@ require 'xcodeproj'
 require 'json'
 require_relative '../lib/pressplay/framework_delegate_generator.rb'
 
-class FilesMoverTest < Minitest::Test
+class FrameworkDelegateGeneratorTests < Minitest::Test
 	def test_basic_app_delegate
 
 		app_delegate = "//
@@ -102,8 +102,8 @@ public var window: UIWindow?
 
 		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
 
-		puts data.app_delegate_raw
-		puts app_delegate_result
+		# puts data.app_delegate_raw
+		# puts app_delegate_result
 
 		assert_equal app_delegate_result, data.app_delegate_raw
 		assert_equal result, data.framework_delegate_raw
@@ -164,8 +164,8 @@ return .empty
 
 		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
 
-		puts data.app_delegate_raw
-		puts app_delegate_result
+		puts data.framework_delegate_raw
+		puts result
 
 		assert_equal app_delegate_result, data.app_delegate_raw
 		assert_equal result, data.framework_delegate_raw
@@ -230,8 +230,8 @@ public func applicationWillResignActive(_ application: UIApplication) {
 
 		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
 
-		puts data.framework_delegate_raw
-		puts result
+		# puts data.framework_delegate_raw
+		# puts result
 
 		assert_equal app_delegate_result, data.app_delegate_raw
 		assert_equal result, data.framework_delegate_raw
@@ -298,8 +298,8 @@ let a = "1"
 
 		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
 
-		puts data.app_delegate_raw
-		puts app_delegate_result
+		# puts data.app_delegate_raw
+		# puts app_delegate_result
 
 		assert_equal app_delegate_result, data.app_delegate_raw
 		assert_equal result, data.framework_delegate_raw
@@ -382,7 +382,7 @@ return true
 
 		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
 
-		puts data.app_delegate_raw
+		# puts data.app_delegate_raw
 
 		assert_equal app_delegate_result, data.app_delegate_raw
 		assert_equal result, data.framework_delegate_raw
@@ -467,7 +467,7 @@ public func applicationWillTerminate(_ application: UIApplication) {
 
 		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
 
-		puts data.app_delegate_raw
+		# puts data.app_delegate_raw
 		
 		assert_equal app_delegate, data.app_delegate_raw
 		assert_equal result, data.framework_delegate_raw

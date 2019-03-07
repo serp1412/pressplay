@@ -100,7 +100,7 @@ module PressPlay
 
       def info
         info = {
-          'CFBundleIdentifier' => '${PRODUCT_BUNDLE_IDENTIFIER}',
+          'CFBundleIdentifier' => 'com.pleaseReplaceMe.framework', # has to be non-empty otherwise won't launch on a real device (TODO: maybe should prompt user for it)
           'CFBundleInfoDictionaryVersion' => '6.0',
           'CFBundleName' => '${PRODUCT_NAME}',
           'CFBundlePackageType' => bundle_package_type.to_s.upcase,

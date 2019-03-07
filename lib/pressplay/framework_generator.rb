@@ -25,7 +25,30 @@ module PressPlay
         framework_group.new_file(relative_path_string)
         app_target.add_dependency(framework_target)
 
+        add_framework_to_embed_binaries(project, app_target, framework_name)
+
 				framework_target
+			end
+
+			private 
+
+			def self.add_framework_to_embed_binaries(project, app_target, framework_name)
+				file_ref = project.files.select { |f| f.path == "#{framework_name}.framework" }.first
+        app_target.frameworks_build_phase.add_file_reference(file_ref, true)
+        embed_build_phase = embed_binaries_phase(app_target, project)
+        build_file = embed_build_phase.add_file_reference(file_ref)
+        build_file.settings = { 'ATTRIBUTES' => ['CodeSignOnCopy', 'RemoveHeadersOnCopy'] }
+			end
+
+			def self.embed_binaries_phase(target, project)
+				phase = target.build_phases.select { |ph| ph.is_a?(Xcodeproj::Project::Object::PBXCopyFilesBuildPhase) }.select { |ph| ph.name == "Embed Frameworks" }.first
+				return phase unless phase.nil?
+
+				new_phase = project.new(Xcodeproj::Project::Object::PBXCopyFilesBuildPhase)
+				new_phase.name = 'Embed Frameworks'
+				new_phase.symbol_dst_subfolder_spec = :frameworks
+				target.build_phases << new_phase
+				new_phase
 			end
 
 			def self.update_changed_file(generator, path)
