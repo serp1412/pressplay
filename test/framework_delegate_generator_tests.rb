@@ -124,9 +124,13 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
 	var window: UIWindow?
-	@objc let key: String = {
+	@objc let another: Int
+	@objc lazy var key: String = {
 		return .empty
 	}()
+	@objc fileprivate var whatever: Bool {
+		return true
+	}
 }"
 
 app_delegate_result = "//
@@ -150,15 +154,19 @@ private lazy var frameworkDelegate: FrameworkDelegate = {
         return delegate
     }()
 	var window: UIWindow?
-}"
+			}"
 
 		result = "import UIKit
 
 public class FrameworkDelegate: UIResponder, UIApplicationDelegate {
 public var window: UIWindow?
-@objc public let key: String = {
-return .empty
-}()
+@objc let another: Int
+@objc lazy var key: String = {
+		return .empty
+	}()
+@objc fileprivate var whatever: Bool {
+		return true
+	}
 }"
 		ast = `sourcekitten structure --text "#{app_delegate}"`
 

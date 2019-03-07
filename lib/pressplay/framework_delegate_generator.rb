@@ -2,6 +2,7 @@ module PressPlay
 	module Generator
 		class FrameworkDelegate
 			require 'json'
+			require 'pry'
 
 			def generate_from(app_delegate_ast, app_delegate_raw_string, framework_name)
 				@app_delegate_raw_string = app_delegate_raw_string
@@ -30,12 +31,13 @@ module PressPlay
 				@framework_delegate_raw << "\n"
 
 				@app_delegate_structure['key.substructure']&.each do |sub_struct|
-					@framework_delegate_raw << prefix_attributes_for(sub_struct) #(sub_struct['key.accessibility'] == 'source.lang.swift.accessibility.internal' ? 'public' : 'private')
+					next if sub_struct['key.kind'].is_expr?
+					@framework_delegate_raw << prefix_attributes_for(sub_struct)
 					@framework_delegate_raw << ' '
 					
 					@framework_delegate_raw << (sub_struct['key.kind'].is_var? ? 
 						string_from_var(sub_struct) :
-						string_from_func(sub_struct, @app_delegate_raw_string))
+						string_from_func(sub_struct))
 					@framework_delegate_raw << ((@framework_delegate_raw.end_with? "\n") ? "" : "\n")
 				end
 
@@ -52,6 +54,7 @@ module PressPlay
 
 			def edit_app_delegate
 				@app_delegate_structure['key.substructure']&.reverse&.each do |sub_struct|
+					next if sub_struct['key.kind'].is_expr?
 					if sub_struct['key.kind'].is_func?
 						process_app_delegate_func(sub_struct)
 					else
@@ -157,18 +160,22 @@ module PressPlay
 
 			# TODO: verify if I can use the string_from_func instead of this for vars and lets
 			def string_from_var(substructure)
-				result = ""
-				result << substructure['key.kind'].to_kind
-				result << ' '
-				result << substructure['key.name'] + ": "
-				result << substructure['key.typename']
+				offset = substructure['key.offset'] - 1
+				# body_offset = substructure['key.bodyoffset']
+				length = substructure['key.length']
+				@app_delegate_raw_string[offset..offset+length]
+				# result = ""
+				# result << substructure['key.kind'].to_kind
+				# result << ' '
+				# result << substructure['key.name'] + ": "
+				# result << substructure['key.typename']
 			end
 
-			def string_from_func(substructure, raw_string)
+			def string_from_func(substructure)
 				offset = substructure['key.offset'] - 1
 				body_offset = substructure['key.bodyoffset']
 				body_length = substructure['key.bodylength']
-				raw_string[offset..body_offset+body_length]
+				@app_delegate_raw_string[offset..body_offset+body_length]
 			end
 		end
 
@@ -198,6 +205,10 @@ class String
 		return 'public' if self == 'source.lang.swift.accessibility.internal'
 		return 'private' if self == 'source.lang.swift.accessibility.private'
 		return 'fileprivate' if self == 'source.lang.swift.accessibility.fileprivate'
+	end
+
+	def is_expr?
+		self == "source.lang.swift.expr.call"
 	end
 
 	def is_var?
