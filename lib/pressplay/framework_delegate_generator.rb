@@ -20,7 +20,8 @@ module PressPlay
 
 			def create_framework_delegate
 				@framework_delegate_raw = ""
-				@import_lines.each { |l| @framework_delegate_raw << l + "\n" }
+				@import_lines.each { |l| @framework_delegate_raw << l }
+				@framework_delegate_raw << "\n"
 				@framework_delegate_raw << "public class FrameworkDelegate: "
 				json = JSON.parse(@app_delegate_ast)
 				# TODO: assuming that first key.substructure is always the AppDelegate class is bad idea. Instead should look for it
@@ -63,7 +64,7 @@ module PressPlay
 				end
 
 				add_framework_delegate_property
-				add_import_framework_line
+				adjust_imports
 			end
 
 			def process_app_delegate_var(sub_struct)
@@ -96,9 +97,11 @@ module PressPlay
 				sub_struct['key.length'] + adjustment_for_attributes
 			end
 
-			def add_import_framework_line
-				insertion_point = @import_lines.last.length + @app_delegate_raw_string.index(@import_lines.last)
-				@app_delegate_raw_string.insert(insertion_point, "import #{@framework_name}\n")
+			def adjust_imports
+				insertion_point = @app_delegate_raw_string.index(@import_lines.first)
+				new_lines = @app_delegate_raw_string.lines.select { |l| !l.start_with?("import") }
+				@app_delegate_raw_string = new_lines.join
+				@app_delegate_raw_string.insert(insertion_point, "import UIKit\n" + "import #{@framework_name}\n")
 			end
 
 			def add_framework_delegate_property

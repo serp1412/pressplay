@@ -245,7 +245,7 @@ public func applicationWillResignActive(_ application: UIApplication) {
 		assert_equal result, data.framework_delegate_raw
 	end
 
-	def test_app_delegate_with_window_var_and_a_func
+	def test_app_delegate_with_window_var_and_a_func_and_multiple_imports
 		app_delegate = '//
 //  AppDelegate.swift
 //  BasicApp
@@ -255,6 +255,8 @@ public func applicationWillResignActive(_ application: UIApplication) {
 //
 
 import UIKit
+import CoreData
+import MBProgressHud
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -294,6 +296,8 @@ frameworkDelegate.applicationWillResignActive(application)
 }"
 
 		result = 'import UIKit
+import CoreData
+import MBProgressHud
 
 public class FrameworkDelegate: UIResponder, UIApplicationDelegate {
 public var window: UIWindow?
@@ -441,9 +445,63 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
 
+}'
+
+		app_delegate_result = '//
+//  AppDelegate.swift
+//  BasicApp
+//
+//  Created by Serghei Catraniuc on 2/10/19.
+//  Copyright © 2019 TestCompany. All rights reserved.
+//
+
+import UIKit
+import TestAppFramework
+
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+private lazy var frameworkDelegate: FrameworkDelegate = {
+        let delegate = FrameworkDelegate()
+        delegate.window = self.window
+
+        return delegate
+    }()
+    var window: UIWindow?
+
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+return frameworkDelegate.application(application, didFinishLaunchingWithOptions:launchOptions)
 }
 
-'
+    func applicationWillResignActive(_ application: UIApplication) {
+
+frameworkDelegate.applicationWillResignActive(application)
+}
+
+    func applicationDidEnterBackground(_ application: UIApplication) {
+
+frameworkDelegate.applicationDidEnterBackground(application)
+}
+
+    func applicationWillEnterForeground(_ application: UIApplication) {
+
+frameworkDelegate.applicationWillEnterForeground(application)
+}
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+
+frameworkDelegate.applicationDidBecomeActive(application)
+}
+
+    func applicationWillTerminate(_ application: UIApplication) {
+
+frameworkDelegate.applicationWillTerminate(application)
+}
+
+
+}'
 
 		result = 'import UIKit
 
@@ -475,9 +533,10 @@ public func applicationWillTerminate(_ application: UIApplication) {
 
 		data = PressPlay::Generator::FrameworkDelegate.new.generate_from(ast, app_delegate, "TestAppFramework")
 
+		# puts app_delegate_result
 		# puts data.app_delegate_raw
 		
-		assert_equal app_delegate, data.app_delegate_raw
+		assert_equal app_delegate_result, data.app_delegate_raw
 		assert_equal result, data.framework_delegate_raw
 	end
 end
