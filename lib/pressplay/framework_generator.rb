@@ -1,7 +1,7 @@
+require 'xcodeproj'
 module PressPlay
 	module Generator
 		class Framework
-			require 'xcodeproj'
 			require_relative 'info_plist_generator'
 
 			def self.generate_for(project, dir = Dir.getwd)
@@ -12,8 +12,8 @@ module PressPlay
 				framework_name = "#{app_target.name}Framework"
 				framework_target = project.new_target(:framework, framework_name, :ios, "#{version}", nil, :swift)
 				framework_group = project.new_group(framework_name)
-				# TODO: pass the main target version
-				info_plist = InfoPlistFile.new('0.0.0', :ios)
+				version = app_target.info_plist["CFBundleShortVersionString"] ||= 1.0
+				info_plist = InfoPlistFile.new("#{version}", :ios)
 
 				relative_path_string = "#{dir}/#{framework_name}/Info.plist"
 				update_changed_file(info_plist, Pathname.new(relative_path_string))
@@ -65,5 +65,11 @@ module PressPlay
         end
       end
 		end
+	end
+end
+
+class Xcodeproj::Project::Object::PBXNativeTarget
+	def info_plist
+		Xcodeproj::Plist.read_from_path(self.build_configurations.first.build_settings["INFOPLIST_FILE"])
 	end
 end
