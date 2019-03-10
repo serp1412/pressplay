@@ -5,8 +5,9 @@ module PressPlay
 			require_relative 'info_plist_generator'
 
 			def self.generate_for(project, dir = Dir.getwd)
-				# TODO: bad assumption that first target is the main one. Probably need to ask user
-				app_target = project.targets.first
+				# TODO: throw error if there's no App target present in project
+				# TODO: verify what product type does an extension target throw
+				app_target = project.targets.select { |t| t.product_type == "com.apple.product-type.application" }.first
 				app_build_settings = app_target.build_configurations.first.build_settings
 				version = app_build_settings['IPHONEOS_DEPLOYMENT_TARGET'] ||= 12.0
 				framework_name = "#{app_target.name}Framework"
